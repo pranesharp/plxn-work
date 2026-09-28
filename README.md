@@ -1,7 +1,13 @@
 # PLXN ($P_x$)
 
-A minimalist visual project planner and infinite canvas workspace designed to turn scattered ideas into structured, actionable pipelines.
-Online link access estas : https://plxn-work.netlify.app/ #hosted on netlify.
+                        A minimalist visual project planner and infinite canvas workspace designed to turn scattered ideas into structured, actionable pipelines.
+                                            
+                                              Online link access estas : https://plxn-work.netlify.app/ (hosted for free on netlify).
+                                                        WITH CLOUD STORAGE, SO YOU CAN ACCESS YOUR WORK ACROSS PLATFORMS TOO.
+
+
+<img width="1919" height="1045" alt="image" src="https://github.com/user-attachments/assets/1116f591-2a36-4d78-b118-54a81f9bb038" />
+
 
 
 ## Overview
