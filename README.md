@@ -65,8 +65,9 @@ Visit `http://localhost:3000` in your browser.
 npm run build
 ```
 
-    `Built with the help of gemini3 flash.
-     Initially Built as personal project for personal workflow/project planning.`
+#Creds
+
+  *Built with the help of gemini3 flash. Initially Built as personal project for personal workflow/project planning.*
 
 ## License
 
