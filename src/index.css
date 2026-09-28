@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Canvas Grid Dots */
+.canvas-grid-dots {
+  background-image: radial-gradient(circle, #CBD5E1 1px, transparent 1px);
+}
+
+:where(.dark) .canvas-grid-dots {
+  background-image: radial-gradient(circle, #334155 1px, transparent 1px);
+}

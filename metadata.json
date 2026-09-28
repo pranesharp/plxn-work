@@ -1,0 +1,6 @@
+{
+  "name": "PLXN - Visual Workflow Canvas & Planner",
+  "description": "Minimalist visual project planner and workflow canvas for spatial brainstorming, pipelines, mind maps, and milestone tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
