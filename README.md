@@ -1,6 +1,13 @@
 # PLXN ($P_x$)
 
-A minimalist visual project planner and infinite canvas workspace designed to turn scattered ideas into structured, actionable pipelines.
+  A minimalist visual project planner and infinite canvas workspace designed to turn scattered ideas into structured, actionable pipelines.
+                                           
+  Online link access estas : https://plxn-work.netlify.app/ (hosted for free on netlify).
+    (firebase cloud for cross-platform working)
+
+<img width="1919" height="1045" alt="image" src="https://github.com/user-attachments/assets/1116f591-2a36-4d78-b118-54a81f9bb038" />
+
+
 
 ## Overview
 
@@ -9,13 +16,6 @@ PLXN lets you map out complex projects spatially rather than getting lost in rig
 ## Key Features
 
 - **Infinite Spatial Canvas**: Freely pan, zoom (25%–250%), and snap nodes to a clean 24px grid.
-- **MS Paint-Style Whiteboard Drawing**:
-  - Tablet & stylus ready freehand pen with midpoint curve smoothing for fluid handwriting and drafting.
-  - Basic geometric shapes: **Lines**, **Directional Arrows**, **Rectangles**, and **Circles/Ellipses** (with outline or translucent tint fill).
-  - Continuous stroke eraser tool with brush-over deletion.
-  - Curated color swatches + custom color picker, and 4 stroke weights (Fine, Medium, Bold, Marker).
-  - Dedicated **Clear Drawings** action that wipes only drawings while keeping all project nodes, tasks, and connections intact.
-  - Full Undo/Redo (`Ctrl+Z` / `Ctrl+Y`) integration for all strokes and shapes.
 - **Node Ecosystem**:
   - **Tasks**: Checklists, assignees, due dates, statuses (*To-Do*, *In Progress*, *Done*, *Blocked*), and live progress bars.
   - **Milestones**: Major goals, target dates, and phase status.
@@ -63,6 +63,10 @@ Visit `http://localhost:3000` in your browser.
 ```bash
 npm run build
 ```
+
+#Creds
+
+  *Built with the help of gemini3 flash. Initially Built as personal project for personal workflow/project planning.*
 
 ## License
 
