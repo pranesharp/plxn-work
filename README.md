@@ -26,6 +26,7 @@ PLXN lets you map out complex projects spatially rather than getting lost in rig
 - **Offline-First & Cloud Sync**: Operates entirely client-side via local storage, with optional Google/Email authentication and automatic real-time sync to **Google Cloud Firestore**.
 - **Dark & Light Mode**: Clean, distraction-free aesthetic with instant zero-flash theme persistence and adaptive dot-grid background.
 - **Data Portability**: Full Undo/Redo history (`Cmd+Z` / `Cmd+Shift+Z`) and one-click JSON workspace export and import.
+- **New Updates Features as of 10/1/26** : Drawing features, similar to that of MS paint. For raw drafting and easy markups.
 
 ## Tech Stack
 
