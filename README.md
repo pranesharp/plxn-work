@@ -64,7 +64,7 @@ Visit `http://localhost:3000` in your browser.
 npm run build
 ```
 
-#Creds
+###Attributes
 
   *Built with the help of gemini3 flash. Initially Built as personal project for personal workflow/project planning.*
 
