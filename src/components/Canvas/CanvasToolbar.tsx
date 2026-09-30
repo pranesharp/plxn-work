@@ -13,7 +13,8 @@ import {
   RotateCcw, 
   Undo2, 
   Redo2, 
-  Sparkles 
+  Sparkles,
+  Pencil
 } from 'lucide-react';
 
 interface CanvasToolbarProps {
@@ -30,6 +31,9 @@ interface CanvasToolbarProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  isDrawMode?: boolean;
+  onToggleDrawMode?: () => void;
+  drawingsCount?: number;
 }
 
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
@@ -46,6 +50,9 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   canRedo,
   onUndo,
   onRedo,
+  isDrawMode = false,
+  onToggleDrawMode,
+  drawingsCount = 0,
 }) => {
   const handleDragStart = (e: React.DragEvent, type: NodeType) => {
     e.dataTransfer.setData('text/plxn-node-type', type);
@@ -112,6 +119,27 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
             <span className="hidden sm:inline">Image</span>
           </button>
         </div>
+
+        {/* Draw Mode Toggle */}
+        {onToggleDrawMode && (
+          <div className="flex items-center px-1 border-r border-neutral-200 dark:border-neutral-800">
+            <button
+              onClick={onToggleDrawMode}
+              title="Draw"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all text-xs font-semibold ${
+                isDrawMode
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
+                  : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+              }`}
+            >
+              <Pencil className={`w-3.5 h-3.5 ${isDrawMode ? 'text-rose-400 dark:text-rose-600' : 'text-rose-500'}`} />
+              <span>Draw</span>
+              {drawingsCount > 0 && (
+                <span className="text-[10px] font-mono opacity-60">({drawingsCount})</span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5 px-1 border-r border-neutral-200 dark:border-neutral-800">

@@ -13,6 +13,7 @@ import {
   Calendar 
 } from 'lucide-react';
 import { exportProjectToJson } from '../../utils/storage';
+import { DeletePlanModal } from '../Modals/DeletePlanModal';
 
 interface ProjectCardProps {
   project: Project;
@@ -23,6 +24,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpen }) => 
   const { togglePinProject, duplicateProject, deleteProject, updateProjectMeta } = useProjectContext();
   const [showMenu, setShowMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [titleInput, setTitleInput] = useState(project.title);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -139,10 +141,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpen }) => 
                   <div className="h-px bg-neutral-100 dark:bg-neutral-800 my-1" />
 
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Delete plan "${project.title}"?`)) {
-                        deleteProject(project.id);
-                      }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDeleteModalOpen(true);
                       setShowMenu(false);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400"
@@ -210,6 +211,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpen }) => 
           />
         </div>
       </div>
+
+      {/* In-App Delete Confirmation Modal */}
+      <DeletePlanModal
+        project={project}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => deleteProject(project.id)}
+      />
     </div>
   );
 };

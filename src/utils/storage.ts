@@ -11,9 +11,9 @@ export function generateUniqueId(prefix: string = 'proj'): string {
 export function loadProjectsFromStorage(): Project[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         // Deduplicate any project IDs in case storage contains duplicate keys
         const seenIds = new Set<string>();
         let hasDuplicates = false;
@@ -37,7 +37,7 @@ export function loadProjectsFromStorage(): Project[] {
     console.error('Failed to parse projects from storage', err);
   }
 
-  // Fallback to default starter templates with guaranteed unique IDs
+  // Fallback to default starter templates only on first-ever clean visit
   const initialProjects: Project[] = [
     { ...TEMPLATES[0].createProject(), id: generateUniqueId('proj') },
     { ...TEMPLATES[1].createProject(), id: generateUniqueId('proj') }

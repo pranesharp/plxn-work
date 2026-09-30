@@ -10,6 +10,8 @@ import { LinkNode } from './Nodes/LinkNode';
 import { ImageNode } from './Nodes/ImageNode';
 import { ConnectionLine } from './ConnectionLine';
 import { CanvasToolbar } from './CanvasToolbar';
+import { DrawingLayer } from './DrawingLayer';
+import { DrawingToolbar } from './DrawingToolbar';
 import { Minimap } from './Minimap';
 import { SidePanel } from './SidePanel';
 
@@ -41,6 +43,10 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
     undo,
     redo,
     updateViewport,
+    isDrawMode,
+    setIsDrawMode,
+    drawingTool,
+    setDrawingTool,
   } = useProjectContext();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,6 +102,7 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
       }
 
       if (e.code === 'Space') {
+        e.preventDefault();
         setSpacePressed(true);
       }
 
@@ -127,12 +134,21 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
       }
 
       if (e.key === 'Escape') {
+        if (isDrawMode) {
+          setIsDrawMode(false);
+        }
         setSelectedNodeId(null);
         setSelectedConnectionId(null);
         setDraftConnection(null);
       }
 
-      if (e.key.toLowerCase() === 'n') {
+      if (e.key.toLowerCase() === 'p') {
+        setIsDrawMode(!isDrawMode);
+        setDrawingTool('pen');
+      } else if (e.key.toLowerCase() === 'e') {
+        setIsDrawMode(true);
+        setDrawingTool('eraser');
+      } else if (e.key.toLowerCase() === 'n') {
         handleQuickAddNode('note');
       } else if (e.key.toLowerCase() === 't') {
         handleQuickAddNode('task');
@@ -157,7 +173,18 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [selectedNodeId, duplicateNode, deleteNode, setSelectedNodeId, setSelectedConnectionId, undo, redo]);
+  }, [
+    selectedNodeId,
+    duplicateNode,
+    deleteNode,
+    setSelectedNodeId,
+    setSelectedConnectionId,
+    undo,
+    redo,
+    isDrawMode,
+    setIsDrawMode,
+    setDrawingTool,
+  ]);
 
   // Center screen coordinates for spawning new nodes
   const getCanvasCenterPosition = useCallback(() => {
@@ -226,8 +253,9 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
 
   // Canvas Mouse Down (Pan or deselect)
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only pan if left click on empty canvas or middle click or space pressed
-    if (e.button === 1 || (e.button === 0 && (spacePressed || e.target === containerRef.current || (e.target as HTMLElement).id === 'canvas-grid-plane'))) {
+    // 1. If Space is pressed, allow panning with ANY mouse button (left 0, middle 1, right 2)
+    if (spacePressed) {
+      e.preventDefault();
       setIsPanning(true);
       panStartRef.current = {
         clientX: e.clientX,
@@ -237,6 +265,43 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
       };
       setSelectedNodeId(null);
       setSelectedConnectionId(null);
+      return;
+    }
+
+    // 2. Middle click (1) always pans
+    if (e.button === 1) {
+      e.preventDefault();
+      setIsPanning(true);
+      panStartRef.current = {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        vpX: viewport.x,
+        vpY: viewport.y,
+      };
+      setSelectedNodeId(null);
+      setSelectedConnectionId(null);
+      return;
+    }
+
+    // 3. When not in draw mode (or in select mode):
+    // Right click (2) or Left click (0) on empty canvas pans
+    if (!isDrawMode || drawingTool === 'select') {
+      const isTargetEmpty =
+        e.target === containerRef.current ||
+        (e.target as HTMLElement).id === 'canvas-grid-plane' ||
+        (e.target as HTMLElement).tagName === 'svg';
+
+      if (e.button === 2 || (e.button === 0 && isTargetEmpty)) {
+        setIsPanning(true);
+        panStartRef.current = {
+          clientX: e.clientX,
+          clientY: e.clientY,
+          vpX: viewport.x,
+          vpY: viewport.y,
+        };
+        setSelectedNodeId(null);
+        setSelectedConnectionId(null);
+      }
     }
   };
 
@@ -454,6 +519,7 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
       onDoubleClick={handleDoubleClick}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onContextMenu={(e) => e.preventDefault()}
       className={`relative w-full h-[calc(100vh-56px)] overflow-hidden select-none bg-[#F9F9F7] dark:bg-[#141416] ${
         spacePressed ? 'cursor-grab' : isPanning ? 'cursor-grabbing' : 'cursor-default'
       }`}
@@ -473,7 +539,13 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
         canRedo={canRedo}
         onUndo={undo}
         onRedo={redo}
+        isDrawMode={isDrawMode}
+        onToggleDrawMode={() => setIsDrawMode(!isDrawMode)}
+        drawingsCount={(project.drawings || []).length}
       />
+
+      {/* Floating MS Paint Style Drawing Tools Toolbar */}
+      <DrawingToolbar />
 
       {/* The 2D Infinite Transform Plane */}
       <div
@@ -523,6 +595,14 @@ export const Canvas: React.FC<CanvasProps> = ({ project, isSidePanelOpen, onTogg
             />
           )}
         </svg>
+
+        {/* Vector MS Paint Freehand & Shape Drawing Layer */}
+        <DrawingLayer
+          project={project}
+          viewport={viewport}
+          containerRef={containerRef}
+          spacePressed={spacePressed}
+        />
 
         {/* Nodes Layer */}
         <div className="absolute top-0 left-0 pointer-events-auto">

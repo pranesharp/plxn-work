@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { Project, NodeItem, Connection, CanvasViewport, ViewMode, ActivityLog } from '../types';
+import { Project, NodeItem, Connection, CanvasViewport, ViewMode, ActivityLog, DrawingElement, DrawingTool } from '../types';
 import { loadProjectsFromStorage, saveProjectsToStorage, getThemePreference, setThemePreference, generateUniqueId } from '../utils/storage';
 import { TEMPLATES } from '../data/templates';
 import { useAuth } from './AuthContext';
@@ -9,6 +9,7 @@ import { collection, doc, setDoc, deleteDoc, getDocs, writeBatch } from 'firebas
 interface HistorySnapshot {
   nodes: NodeItem[];
   connections: Connection[];
+  drawings: DrawingElement[];
 }
 
 export type CloudSyncStatus = 'synced' | 'syncing' | 'local' | 'error';
@@ -53,6 +54,22 @@ interface ProjectContextType {
   updateConnection: (connId: string, updates: Partial<Connection>) => void;
   deleteConnection: (connId: string) => void;
   
+  // Drawing operations
+  addDrawingElement: (element: DrawingElement) => void;
+  deleteDrawingElement: (elementId: string) => void;
+  deleteDrawingElements: (elementIds: string[]) => void;
+  clearDrawings: () => void;
+  isDrawMode: boolean;
+  setIsDrawMode: (active: boolean) => void;
+  drawingTool: DrawingTool;
+  setDrawingTool: (tool: DrawingTool) => void;
+  drawingColor: string;
+  setDrawingColor: (color: string) => void;
+  drawingStrokeWidth: number;
+  setDrawingStrokeWidth: (width: number) => void;
+  drawingFill: string;
+  setDrawingFill: (fill: string) => void;
+
   // Viewport & Activity
   updateViewport: (viewport: CanvasViewport) => void;
   addActivityLog: (text: string, type?: ActivityLog['type']) => void;
@@ -75,6 +92,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('local');
+
+  // Drawing state
+  const [isDrawMode, setIsDrawMode] = useState<boolean>(false);
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>('pen');
+  const [drawingColor, setDrawingColor] = useState<string>('#18181B');
+  const [drawingStrokeWidth, setDrawingStrokeWidth] = useState<number>(4);
+  const [drawingFill, setDrawingFill] = useState<string>('none');
 
   // Undo / Redo stacks
   const undoStackRef = useRef<HistorySnapshot[]>([]);
@@ -181,8 +205,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const pushHistorySnapshot = useCallback(() => {
     if (!activeProject) return;
     undoStackRef.current.push({
-      nodes: JSON.parse(JSON.stringify(activeProject.nodes)),
-      connections: JSON.parse(JSON.stringify(activeProject.connections)),
+      nodes: JSON.parse(JSON.stringify(activeProject.nodes || [])),
+      connections: JSON.parse(JSON.stringify(activeProject.connections || [])),
+      drawings: JSON.parse(JSON.stringify(activeProject.drawings || [])),
     });
     // Keep stack max 30
     if (undoStackRef.current.length > 30) {
@@ -198,8 +223,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!previous) return;
 
     redoStackRef.current.push({
-      nodes: JSON.parse(JSON.stringify(activeProject.nodes)),
-      connections: JSON.parse(JSON.stringify(activeProject.connections)),
+      nodes: JSON.parse(JSON.stringify(activeProject.nodes || [])),
+      connections: JSON.parse(JSON.stringify(activeProject.connections || [])),
+      drawings: JSON.parse(JSON.stringify(activeProject.drawings || [])),
     });
 
     setProjects((prev) =>
@@ -209,6 +235,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
               ...p,
               nodes: previous.nodes,
               connections: previous.connections,
+              drawings: previous.drawings || [],
               updatedAt: Date.now(),
             }
           : p
@@ -223,8 +250,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!next) return;
 
     undoStackRef.current.push({
-      nodes: JSON.parse(JSON.stringify(activeProject.nodes)),
-      connections: JSON.parse(JSON.stringify(activeProject.connections)),
+      nodes: JSON.parse(JSON.stringify(activeProject.nodes || [])),
+      connections: JSON.parse(JSON.stringify(activeProject.connections || [])),
+      drawings: JSON.parse(JSON.stringify(activeProject.drawings || [])),
     });
 
     setProjects((prev) =>
@@ -234,6 +262,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
               ...p,
               nodes: next.nodes,
               connections: next.connections,
+              drawings: next.drawings || [],
               updatedAt: Date.now(),
             }
           : p
@@ -283,7 +312,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const deleteProject = useCallback((id: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+    setProjects((prev) => {
+      const remaining = prev.filter((p) => p.id !== id);
+      saveProjectsToStorage(remaining);
+      return remaining;
+    });
     if (user) {
       deleteDoc(doc(db, 'users', user.uid, 'projects', id)).catch((err) =>
         console.error('Failed to delete project from Firestore', err)
@@ -565,6 +598,63 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [activeProjectId]
   );
 
+  // Drawing operations
+  const addDrawingElement = useCallback(
+    (element: DrawingElement) => {
+      if (!activeProjectId) return;
+      pushHistorySnapshot();
+      setProjects((prev) =>
+        prev.map((p) => {
+          if (p.id !== activeProjectId) return p;
+          const currentDrawings = p.drawings || [];
+          return {
+            ...p,
+            drawings: [...currentDrawings, element],
+            updatedAt: Date.now(),
+          };
+        })
+      );
+    },
+    [activeProjectId, pushHistorySnapshot]
+  );
+
+  const deleteDrawingElement = useCallback(
+    (elementId: string) => {
+      if (!activeProjectId) return;
+      pushHistorySnapshot();
+      setProjects((prev) =>
+        prev.map((p) => {
+          if (p.id !== activeProjectId) return p;
+          return {
+            ...p,
+            drawings: (p.drawings || []).filter((d) => d.id !== elementId),
+            updatedAt: Date.now(),
+          };
+        })
+      );
+    },
+    [activeProjectId, pushHistorySnapshot]
+  );
+
+  const deleteDrawingElements = useCallback(
+    (elementIds: string[]) => {
+      if (!activeProjectId || elementIds.length === 0) return;
+      pushHistorySnapshot();
+      const idSet = new Set(elementIds);
+      setProjects((prev) =>
+        prev.map((p) => {
+          if (p.id !== activeProjectId) return p;
+          return {
+            ...p,
+            drawings: (p.drawings || []).filter((d) => !idSet.has(d.id)),
+            updatedAt: Date.now(),
+          };
+        })
+      );
+    },
+    [activeProjectId, pushHistorySnapshot]
+  );
+
   const addActivityLog = useCallback(
     (text: string, type: ActivityLog['type'] = 'update') => {
       if (!activeProjectId) return;
@@ -584,6 +674,22 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     },
     [activeProjectId]
   );
+
+  const clearDrawings = useCallback(() => {
+    if (!activeProjectId) return;
+    pushHistorySnapshot();
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== activeProjectId) return p;
+        return {
+          ...p,
+          drawings: [], // CLEARS ONLY DRAWINGS! All nodes, tasks, cards, and connections remain intact!
+          updatedAt: Date.now(),
+        };
+      })
+    );
+    addActivityLog('Cleared drawings from canvas', 'update');
+  }, [activeProjectId, pushHistorySnapshot, addActivityLog]);
 
   return (
     <ProjectContext.Provider
@@ -620,6 +726,20 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addConnection,
         updateConnection,
         deleteConnection,
+        addDrawingElement,
+        deleteDrawingElement,
+        deleteDrawingElements,
+        clearDrawings,
+        isDrawMode,
+        setIsDrawMode,
+        drawingTool,
+        setDrawingTool,
+        drawingColor,
+        setDrawingColor,
+        drawingStrokeWidth,
+        setDrawingStrokeWidth,
+        drawingFill,
+        setDrawingFill,
         updateViewport,
         addActivityLog,
         undo,
@@ -655,6 +775,7 @@ function createBlankProject(): Project {
     activity: [
       { id: 'act-init', timestamp: Date.now(), text: 'Created workspace', type: 'create' }
     ],
+    drawings: [],
     nodes: [
       {
         id: 'node-welcome',

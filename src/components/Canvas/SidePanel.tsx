@@ -10,8 +10,10 @@ import {
   CheckCircle2, 
   Flag, 
   Plus, 
-  Clock 
+  Clock,
+  Trash2
 } from 'lucide-react';
+import { DeletePlanModal } from '../Modals/DeletePlanModal';
 
 interface SidePanelProps {
   project: Project;
@@ -20,9 +22,10 @@ interface SidePanelProps {
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({ project, isOpen, onClose }) => {
-  const { updateProjectMeta } = useProjectContext();
+  const { updateProjectMeta, deleteProject } = useProjectContext();
   const [activeTab, setActiveTab] = useState<'notes' | 'tags' | 'activity' | 'stats'>('notes');
   const [newTagInput, setNewTagInput] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -324,6 +327,24 @@ export const SidePanel: React.FC<SidePanelProps> = ({ project, isOpen, onClose }
           </div>
         )}
       </div>
+
+      {/* Panel Footer: Delete Plan Action */}
+      <div className="p-3 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30">
+        <button
+          onClick={() => setIsDeleteModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Delete This Plan</span>
+        </button>
+      </div>
+
+      <DeletePlanModal
+        project={project}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => deleteProject(project.id)}
+      />
     </aside>
   );
 };

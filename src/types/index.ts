@@ -82,6 +82,26 @@ export interface CanvasViewport {
   zoom: number;
 }
 
+export type DrawingTool = 'select' | 'pen' | 'eraser' | 'line' | 'arrow' | 'rect' | 'circle';
+
+export interface DrawingPoint {
+  x: number;
+  y: number;
+  pressure?: number;
+}
+
+export type DrawingElementType = 'stroke' | 'line' | 'arrow' | 'rect' | 'circle';
+
+export interface DrawingElement {
+  id: string;
+  type: DrawingElementType;
+  points: DrawingPoint[];
+  color: string;
+  strokeWidth: number;
+  opacity?: number;
+  fill?: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -95,8 +115,10 @@ export interface Project {
   notes: string;
   nodes: NodeItem[];
   connections: Connection[];
+  drawings?: DrawingElement[];
   activity: ActivityLog[];
   viewport: CanvasViewport;
 }
 
 export type ViewMode = 'dashboard' | 'canvas';
+
